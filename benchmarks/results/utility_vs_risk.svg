@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="24" y="32" font-family="Arial, sans-serif" font-size="20" font-weight="700">Utility vs Re-ID Risk</text>
+<text x="24" y="56" font-family="Arial, sans-serif" font-size="12" fill="#555">Higher utility is better. Lower risk is better.</text>
+<text x="24" y="105" font-family="Arial, sans-serif" font-size="13">independent</text>
+<rect x="150" y="90" width="413" height="22" rx="3" fill="#2563eb"/>
+<rect x="150" y="115" width="0" height="8" rx="2" fill="#dc2626"/>
+<text x="680" y="105" font-family="Arial, sans-serif" font-size="12" fill="#333">U 0.795 / R 0.000</text>
+<text x="24" y="155" font-family="Arial, sans-serif" font-size="13">privbayes</text>
+<rect x="150" y="140" width="299" height="22" rx="3" fill="#2563eb"/>
+<rect x="150" y="165" width="0" height="8" rx="2" fill="#dc2626"/>
+<text x="680" y="155" font-family="Arial, sans-serif" font-size="12" fill="#333">U 0.576 / R 0.000</text>
+<text x="24" y="205" font-family="Arial, sans-serif" font-size="13">datasynthesizer-independent</text>
+<rect x="150" y="190" width="451" height="22" rx="3" fill="#2563eb"/>
+<rect x="150" y="215" width="2" height="8" rx="2" fill="#dc2626"/>
+<text x="680" y="205" font-family="Arial, sans-serif" font-size="12" fill="#333">U 0.869 / R 0.005</text>
+<line x1="150" y1="284" x2="670" y2="284" stroke="#ddd"/>
+<text x="150" y="304" font-family="Arial, sans-serif" font-size="11" fill="#555">0</text>
+<text x="662" y="304" font-family="Arial, sans-serif" font-size="11" fill="#555">1</text>
+</svg>

@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use SynthHub, please cite it as below."
+title: "SynthHub: one unified API for differentially private synthetic data"
+authors:
+  - name: "TaupT"
+version: 0.1.0
+date-released: 2026-06-17
+url: "https://github.com/tauptlab/synthhub"
+license: MIT
+
