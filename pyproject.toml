@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synthhub"
+version = "0.1.0"
+description = "One unified API for differentially private synthetic data."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "TaupT"}]
+keywords = ["differential-privacy", "synthetic-data", "privacy", "pandas"]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+datasynthesizer = ["DataSynthesizer>=0.1.13"]
+private-pgm = ["tmlt.private_pgm>=0.1.1a2; python_version < '3.13'"]
+smartnoise = ["smartnoise-synth>=1.0.8"]
+synthcity = ["synthcity>=0.2.12; python_version < '3.13'"]
+test = ["pytest>=7.0"]
+notebook = ["jupyter>=1.0"]
+all-backends = [
+  "DataSynthesizer>=0.1.13",
+  "smartnoise-synth>=1.0.8",
+  "synthcity>=0.2.12; python_version < '3.13'",
+  "tmlt.private_pgm>=0.1.1a2; python_version < '3.13'",
+]
+
+[tool.setuptools.packages.find]
+include = ["synthhub*"]
+exclude = ["tests*", "examples*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
