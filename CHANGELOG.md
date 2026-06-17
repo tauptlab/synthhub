@@ -6,6 +6,7 @@ All notable changes to SynthHub are documented here.
 
 - Added PyPI trusted-publishing workflow and release checklist.
 - Added SmartNoise MWEM live smoke coverage.
+- Added Private-PGM AIM/MST live smoke coverage using upstream mechanisms.
 - Expanded the public benchmark to breast cancer, iris, and diabetes sklearn datasets.
 - Added a public-schema guide for formal DP usage.
 - Fixed SmartNoise epsilon-only mechanisms that reject `delta`.

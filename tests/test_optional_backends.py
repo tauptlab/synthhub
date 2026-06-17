@@ -224,6 +224,53 @@ def test_datasynthesizer_live_smoke_if_installed() -> None:
     assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
 
 
+def test_private_pgm_mst_live_smoke_if_mechanisms_available() -> None:
+    pytest.importorskip("mbi")
+    pytest.importorskip("mechanisms.mst")
+    df = pd.DataFrame(
+        {
+            "age": [21, 34, 37, 45, 52, 23, 41, 29, 62, 31],
+            "city": ["A", "B", "A", "C", "B", "A", "C", "C", "B", "A"],
+            "churn": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+        }
+    )
+
+    synth = Synthesizer(method="mst", epsilon=1.0, random_state=0).fit(df)
+    sample = synth.sample(8)
+
+    assert sample.shape == (8, 3)
+    assert list(sample.columns) == list(df.columns)
+    assert synth.privacy_report_.backend == "private-pgm:mst"
+    assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+
+
+def test_private_pgm_aim_live_smoke_if_mechanisms_available() -> None:
+    pytest.importorskip("mbi")
+    pytest.importorskip("mechanisms.aim")
+    df = pd.DataFrame(
+        {
+            "city": ["A", "B", "A", "C", "B", "A", "C", "C", "B", "A"] * 2,
+            "churn": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0] * 2,
+        }
+    )
+
+    synth = Synthesizer(
+        method="aim",
+        epsilon=1.0,
+        random_state=0,
+        degree=2,
+        rounds=4,
+        max_iters=20,
+        max_model_size=0.2,
+    ).fit(df)
+    sample = synth.sample(8)
+
+    assert sample.shape == (8, 2)
+    assert list(sample.columns) == list(df.columns)
+    assert synth.privacy_report_.backend == "private-pgm:aim"
+    assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+
+
 def test_smartnoise_mwem_live_smoke_if_installed() -> None:
     pytest.importorskip("snsynth")
     df = pd.DataFrame(

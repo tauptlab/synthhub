@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 datasynthesizer = ["DataSynthesizer>=0.1.13"]
-private-pgm = ["tmlt.private_pgm>=0.1.1a2; python_version < '3.13'"]
+private-pgm = ["matplotlib>=3.7", "mbi>=1.1.0"]
 smartnoise = ["smartnoise-synth>=1.0.8"]
 synthcity = ["synthcity>=0.2.12; python_version < '3.13'"]
 test = ["pytest>=7.0"]
@@ -41,7 +41,8 @@ all-backends = [
   "DataSynthesizer>=0.1.13",
   "smartnoise-synth>=1.0.8",
   "synthcity>=0.2.12; python_version < '3.13'",
-  "tmlt.private_pgm>=0.1.1a2; python_version < '3.13'",
+  "matplotlib>=3.7",
+  "mbi>=1.1.0",
 ]
 
 [project.urls]

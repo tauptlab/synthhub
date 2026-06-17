@@ -11,8 +11,8 @@ through one dataframe-first API.
 | `independent` | SynthHub one-way marginal baseline | Sequential composition over noisy one-way marginals | live unit tests | Baseline only; does not preserve correlations. |
 | `privbayes` | DataSynthesizer correlated mode | DataSynthesizer correlated attribute mode | live smoke when dependency is installed | Active-domain categorical DP over SynthHub-encoded columns. |
 | `datasynthesizer-independent` | DataSynthesizer independent mode | DataSynthesizer independent attribute mode | live adapter path | Active-domain categorical DP over SynthHub-encoded columns. |
-| `aim` | Private-PGM AIM | External Private-PGM mechanism | adapter contract; live only when dependency is available | Requires Private-PGM mechanisms on `PYTHONPATH`. |
-| `mst` | Private-PGM MST | External Private-PGM mechanism | adapter contract; live only when dependency is available | Requires Private-PGM mechanisms on `PYTHONPATH`. |
+| `aim` | Private-PGM AIM | External Private-PGM mechanism | live smoke with upstream mechanisms | Requires Private-PGM mechanisms on `PYTHONPATH`. |
+| `mst` | Private-PGM MST | External Private-PGM mechanism | live smoke with upstream mechanisms | Requires Private-PGM mechanisms on `PYTHONPATH`. |
 | `mwem` | SmartNoise Synthesizers | SmartNoise odometer when exposed | live smoke when dependency is installed | Epsilon-only mechanism; `delta` is not passed when unsupported. |
 | SmartNoise AIM/MST/GAN aliases | SmartNoise Synthesizers | SmartNoise odometer when exposed | mocked adapter contract | Heavy optional dependency; SynthHub sets preprocessing epsilon to zero by default. |
 | SynthCity aliases | SynthCity privacy plugins | Plugin-specific epsilon parameter | mocked adapter contract | Plugin accounting varies; use as experimental until live CI is added. |
@@ -43,6 +43,8 @@ SynthHub tests and runtime checks verify:
 - missing optional backends fail closed with `BackendNotAvailableError`
 - DataSynthesizer PrivBayes runs in a live smoke test when installed
 - SmartNoise MWEM runs in a live smoke test when installed
+- Private-PGM AIM and MST run in live smoke tests with upstream mechanisms on
+  `PYTHONPATH`
 
 ## What SynthHub Does Not Prove
 

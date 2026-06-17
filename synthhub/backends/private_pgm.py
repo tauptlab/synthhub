@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext, redirect_stdout
 from dataclasses import dataclass
+import io
 from itertools import combinations
 from typing import Any
 
@@ -27,9 +29,11 @@ class PrivatePGMAdapter:
         delta: float | None = 1e-9,
         random_state=None,
         degree: int = 2,
+        rounds: int | None = None,
         max_cells: int = 10_000,
         max_model_size: float = 1.0,
         max_iters: int = 1_000,
+        verbose: bool = False,
         **_: object,
     ):
         if epsilon <= 0:
@@ -39,35 +43,43 @@ class PrivatePGMAdapter:
         self.delta = 1e-9 if delta is None else float(delta)
         self.random_state = random_state
         self.degree = degree
+        self.rounds = rounds
         self.max_cells = max_cells
         self.max_model_size = max_model_size
         self.max_iters = max_iters
+        self.verbose = verbose
 
     def fit(self, encoded_df: pd.DataFrame, context: FitContext) -> "FittedPrivatePGM":
         imports = _load_private_pgm(self.mechanism)
         domain = _make_domain(imports.Domain, context.domain)
-        dataset = imports.Dataset(encoded_df.loc[:, list(context.domain)].astype(int), domain)
+        data = {
+            column: encoded_df[column].to_numpy(dtype=int)
+            for column in context.domain
+        }
+        dataset = imports.Dataset(data, domain)
 
         if self.random_state is not None:
             np.random.seed(int(self.random_state))
 
-        if self.mechanism == "aim":
-            workload = _build_workload(domain, context.domain, self.degree, self.max_cells)
-            mechanism = imports.AIM(
-                self.epsilon,
-                self.delta,
-                max_model_size=self.max_model_size,
-                max_iters=self.max_iters,
-            )
-            model, synth = mechanism.run(dataset, workload, num_synth_rows=len(encoded_df))
-            synthetic = _dataset_to_frame(synth, context.domain)
-            fitted_model = model
-        elif self.mechanism == "mst":
-            synth = imports.MST(dataset, self.epsilon, self.delta)
-            synthetic = _dataset_to_frame(synth, context.domain)
-            fitted_model = None
-        else:
-            raise BackendNotAvailableError(f"unsupported Private-PGM mechanism: {self.mechanism}")
+        with _output_context(self.verbose):
+            if self.mechanism == "aim":
+                workload = _build_workload(domain, context.domain, self.degree, self.max_cells)
+                mechanism = imports.AIM(
+                    self.epsilon,
+                    self.delta,
+                    rounds=self.rounds,
+                    max_model_size=self.max_model_size,
+                    max_iters=self.max_iters,
+                )
+                model, synth = mechanism.run(dataset, workload, num_synth_rows=len(encoded_df))
+                synthetic = _dataset_to_frame(synth, context.domain)
+                fitted_model = model
+            elif self.mechanism == "mst":
+                synth = imports.MST(dataset, self.epsilon, self.delta)
+                synthetic = _dataset_to_frame(synth, context.domain)
+                fitted_model = None
+            else:
+                raise BackendNotAvailableError(f"unsupported Private-PGM mechanism: {self.mechanism}")
 
         report = PrivacyReport(
             method=context.method,
@@ -115,16 +127,12 @@ class _PrivatePGMImports:
 
 def _load_private_pgm(mechanism: str) -> _PrivatePGMImports:
     try:
-        from tmlt.private_pgm import Dataset, Domain
-    except Exception:
-        try:
-            from mbi import Dataset, Domain
-        except Exception as exc:
-            raise BackendNotAvailableError(
-                "AIM/MST require Private-PGM. Install the optional dependency and make "
-                "the mechanisms folder importable, for example: pip install "
-                "'synthhub[private-pgm]' on Python 3.10-3.12."
-            ) from exc
+        from mbi import Dataset, Domain
+    except Exception as exc:
+        raise BackendNotAvailableError(
+            "AIM/MST require Private-PGM's mbi package. Install with "
+            "pip install 'synthhub[private-pgm]'."
+        ) from exc
 
     if mechanism == "aim":
         try:
@@ -132,7 +140,8 @@ def _load_private_pgm(mechanism: str) -> _PrivatePGMImports:
         except Exception as exc:
             raise BackendNotAvailableError(
                 "AIM requires Private-PGM's mechanisms/aim.py to be importable. "
-                "Install or clone Private-PGM and add its mechanisms folder to PYTHONPATH."
+                "Clone https://github.com/ryan112358/private-pgm and add the repo root "
+                "and mechanisms folder to PYTHONPATH."
             ) from exc
         return _PrivatePGMImports(Dataset=Dataset, Domain=Domain, AIM=AIM)
 
@@ -142,7 +151,8 @@ def _load_private_pgm(mechanism: str) -> _PrivatePGMImports:
         except Exception as exc:
             raise BackendNotAvailableError(
                 "MST requires Private-PGM's mechanisms/mst.py to be importable. "
-                "Install or clone Private-PGM and add its mechanisms folder to PYTHONPATH."
+                "Clone https://github.com/ryan112358/private-pgm and add the repo root "
+                "and mechanisms folder to PYTHONPATH."
             ) from exc
         return _PrivatePGMImports(Dataset=Dataset, Domain=Domain, MST=MST)
 
@@ -182,3 +192,9 @@ def _dataset_to_frame(dataset: Any, domain: dict[str, int]) -> pd.DataFrame:
         frame = pd.DataFrame(np.asarray(dataset), columns=columns)
     frame = frame.loc[:, columns]
     return frame.astype(int).reset_index(drop=True)
+
+
+def _output_context(verbose: bool):
+    if verbose:
+        return nullcontext()
+    return redirect_stdout(io.StringIO())

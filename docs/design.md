@@ -26,7 +26,7 @@ Changing `method` should be the main user-facing switch:
 - `independent`: built-in one-way marginal baseline for examples, smoke tests,
   and evaluation pipeline checks.
 - SmartNoise aliases: `mwem`, `pacsynth`, `dpctgan`, `patectgan`, `pategan`,
-  `dpgan`, `quail`, `smartnoise-aim`, `smartnoise-mst`.
+  `dpgan`, `smartnoise-aim`, `smartnoise-mst`.
 - SynthCity aliases: `synthcity-privbayes`, `synthcity-pategan`,
   `synthcity-dpgan`.
 
@@ -88,9 +88,9 @@ Current implementation status:
 
 | Family | Methods | Status | Notes |
 |---|---|---|---|
-| Private-PGM | AIM, MST | adapter | Best marginal-first MVP target; external mechanisms must be importable. |
+| Private-PGM | AIM, MST | live smoke | Best marginal-first MVP target; external mechanisms must be importable. |
 | DataSynthesizer | PrivBayes, independent DP mode | adapter | Lightweight optional PrivBayes path using active-domain categorical synthesis over SynthHub-encoded columns. |
-| SmartNoise Synthesizers | AIM, MST, MWEM, PAC-Synth, DP-CTGAN, PATE-CTGAN, PATE-GAN, DP-GAN, QUAIL | adapter | Broadest immediate expansion; SynthHub passes encoded data and sets preprocessing epsilon to 0 by default. |
+| SmartNoise Synthesizers | AIM, MST, MWEM, PAC-Synth, DP-CTGAN, PATE-CTGAN, PATE-GAN, DP-GAN | adapter | Broadest immediate expansion; SynthHub passes encoded data and sets preprocessing epsilon to 0 by default. |
 | SynthCity | PrivBayes, PATEGAN, DPGAN | adapter | Useful for GAN/Bayesian privacy plugins; dependency is heavy and Python-version sensitive. |
 | OpenDP contingency tables | AIM, MST, Fixed, Sequential | planned | Strong long-term trust target, but its context/query API needs a dedicated public-schema flow rather than the simple encoded backend contract. |
 

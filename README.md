@@ -70,6 +70,7 @@ What is solid today:
 - core `Synthesizer.fit/sample/evaluate` flow
 - schema inference and explicit public schema support
 - DataSynthesizer PrivBayes live smoke coverage
+- Private-PGM AIM/MST live smoke coverage with upstream mechanisms
 - SmartNoise MWEM live smoke coverage
 - adapter contract tests for optional backends
 - CI across Python 3.10, 3.11, and 3.12 for the core package
@@ -105,6 +106,9 @@ python -m pip install "synthhub[smartnoise]"
 python -m pip install "synthhub[synthcity]"
 python -m pip install "synthhub[private-pgm]"
 ```
+
+Private-PGM AIM/MST also require the upstream `mechanisms/` folder on
+`PYTHONPATH`; see [`docs/private-pgm.md`](docs/private-pgm.md).
 
 For local development:
 
@@ -151,8 +155,8 @@ Try the notebook version in
 | `datasynthesizer-privbayes` | DataSynthesizer correlated mode | `datasynthesizer` | live smoke | Explicit alias for `privbayes`. |
 | `datasynthesizer-independent` | DataSynthesizer independent mode | `datasynthesizer` | live smoke | Useful baseline over independent attributes. |
 | `independent` | SynthHub one-way marginals | none | live tests | Built-in smoke-test baseline; not a production synthesizer. |
-| `aim` | Private-PGM AIM | `private-pgm` plus mechanisms path | adapter contract | Requires Private-PGM mechanism modules. |
-| `mst` | Private-PGM MST | `private-pgm` plus mechanisms path | adapter contract | Requires Private-PGM mechanism modules. |
+| `aim` | Private-PGM AIM | `private-pgm` plus mechanisms path | live smoke | Requires Private-PGM mechanism modules. |
+| `mst` | Private-PGM MST | `private-pgm` plus mechanisms path | live smoke | Requires Private-PGM mechanism modules. |
 | `mwem` | SmartNoise Synthesizers | `smartnoise` | live smoke | Epsilon-only mechanism; unsupported `delta` is handled explicitly. |
 | `pacsynth` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Optional dependency is heavy. |
 | `dpctgan`, `patectgan`, `pategan`, `dpgan` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Experimental GAN-family adapters. |
@@ -229,6 +233,7 @@ Repository files:
 
 - [`docs/design.md`](docs/design.md): architecture and adapter boundaries
 - [`docs/dp-guarantees.md`](docs/dp-guarantees.md): privacy contract details
+- [`docs/private-pgm.md`](docs/private-pgm.md): Private-PGM AIM/MST setup
 - [`docs/public-schema.md`](docs/public-schema.md): formal public-schema usage
 - [`docs/release.md`](docs/release.md): PyPI release process
 - [`benchmarks/run_benchmark.py`](benchmarks/run_benchmark.py): public benchmark
@@ -239,7 +244,6 @@ Repository files:
 
 Near-term:
 
-- add live CI coverage for at least one Private-PGM AIM/MST path
 - publish the first PyPI release
 - add richer benchmark datasets and normalized benchmark history
 - add live CI coverage for SmartNoise AIM/MST or one GAN-family backend
