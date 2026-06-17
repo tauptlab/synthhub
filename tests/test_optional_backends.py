@@ -290,3 +290,47 @@ def test_smartnoise_mwem_live_smoke_if_installed() -> None:
     assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
     assert synth.privacy_report_.delta is None
     assert any("does not accept delta" in warning for warning in synth.privacy_report_.warnings)
+
+
+@pytest.mark.filterwarnings("ignore:Pandas dataframe inputs are deprecated:UserWarning")
+def test_smartnoise_aim_live_smoke_if_installed(capsys) -> None:
+    pytest.importorskip("snsynth")
+    df = pd.DataFrame(
+        {
+            "age": [21, 34, 37, 45, 52, 23, 41, 29, 62, 31],
+            "city": ["A", "B", "A", "C", "B", "A", "C", "C", "B", "A"],
+            "churn": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+        }
+    )
+
+    synth = Synthesizer(method="smartnoise-aim", epsilon=1.0, delta=1e-9, random_state=0).fit(df)
+    sample = synth.sample(8)
+
+    assert sample.shape == (8, 3)
+    assert list(sample.columns) == list(df.columns)
+    assert synth.privacy_report_.backend == "smartnoise:aim"
+    assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+    assert synth.privacy_report_.delta == pytest.approx(1e-9)
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.filterwarnings("ignore:Pandas dataframe inputs are deprecated:UserWarning")
+@pytest.mark.filterwarnings("ignore:ChainedAssignmentError:FutureWarning")
+def test_smartnoise_mst_live_smoke_if_installed() -> None:
+    pytest.importorskip("snsynth")
+    df = pd.DataFrame(
+        {
+            "age": [21, 34, 37, 45, 52, 23, 41, 29, 62, 31],
+            "city": ["A", "B", "A", "C", "B", "A", "C", "C", "B", "A"],
+            "churn": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+        }
+    )
+
+    synth = Synthesizer(method="smartnoise-mst", epsilon=1.0, delta=1e-9, random_state=0).fit(df)
+    sample = synth.sample(8)
+
+    assert sample.shape == (8, 3)
+    assert list(sample.columns) == list(df.columns)
+    assert synth.privacy_report_.backend == "smartnoise:mst"
+    assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+    assert synth.privacy_report_.delta == pytest.approx(1e-9)

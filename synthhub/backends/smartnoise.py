@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext, redirect_stdout
 from dataclasses import dataclass
+import io
 from typing import Any
 
 import numpy as np
@@ -43,6 +45,7 @@ class SmartNoiseAdapter:
         self.random_state = random_state
         self.preprocessor_eps = float(preprocessor_eps)
         self.nullable = nullable
+        self.verbose = bool(options.get("verbose", False))
         self.options = options
 
     def fit(self, encoded_df: pd.DataFrame, context: FitContext) -> "FittedSmartNoise":
@@ -60,21 +63,22 @@ class SmartNoiseAdapter:
         create_kwargs = dict(self.options)
 
         try:
-            model, spent_delta_fallback, delta_warning = _create_smartnoise_model(
-                SmartNoiseSynthesizer,
-                self.synth,
-                epsilon=self.epsilon,
-                delta=self.delta,
-                options=create_kwargs,
-            )
-            model.fit(
-                encoded_df,
-                categorical_columns=list(encoded_df.columns),
-                continuous_columns=[],
-                ordinal_columns=[],
-                preprocessor_eps=self.preprocessor_eps,
-                nullable=self.nullable,
-            )
+            with _output_context(self.verbose):
+                model, spent_delta_fallback, delta_warning = _create_smartnoise_model(
+                    SmartNoiseSynthesizer,
+                    self.synth,
+                    epsilon=self.epsilon,
+                    delta=self.delta,
+                    options=create_kwargs,
+                )
+                model.fit(
+                    encoded_df,
+                    categorical_columns=list(encoded_df.columns),
+                    continuous_columns=[],
+                    ordinal_columns=[],
+                    preprocessor_eps=self.preprocessor_eps,
+                    nullable=self.nullable,
+                )
         except Exception as exc:
             raise BackendNotAvailableError(
                 f"SmartNoise synthesizer {self.synth!r} could not fit the data: {exc}"
@@ -188,3 +192,9 @@ def _coerce_encoded_frame(sampled: Any, domain: dict[str, int]) -> pd.DataFrame:
         values = pd.to_numeric(frame[column], errors="coerce").fillna(0.0).round().astype(int)
         coerced[column] = np.clip(values.to_numpy(dtype=int), 0, size - 1)
     return pd.DataFrame(coerced, columns=columns)
+
+
+def _output_context(verbose: bool):
+    if verbose:
+        return nullcontext()
+    return redirect_stdout(io.StringIO())

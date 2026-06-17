@@ -71,7 +71,7 @@ What is solid today:
 - schema inference and explicit public schema support
 - DataSynthesizer PrivBayes live smoke coverage
 - Private-PGM AIM/MST live smoke coverage with upstream mechanisms
-- SmartNoise MWEM live smoke coverage
+- SmartNoise MWEM/AIM/MST live smoke coverage
 - adapter contract tests for optional backends
 - CI across Python 3.10, 3.11, and 3.12 for the core package
 - package build and metadata checks in CI
@@ -79,7 +79,7 @@ What is solid today:
 
 What is still experimental:
 
-- SmartNoise AIM/MST/GAN and SynthCity adapters are contract-tested but not yet
+- SmartNoise GAN and SynthCity adapters are contract-tested but not yet
   live-tested in CI
 - Private-PGM AIM/MST require external mechanism modules on `PYTHONPATH`
 - membership-inference scoring is an audit heuristic, not a DP proof
@@ -160,7 +160,7 @@ Try the notebook version in
 | `mwem` | SmartNoise Synthesizers | `smartnoise` | live smoke | Epsilon-only mechanism; unsupported `delta` is handled explicitly. |
 | `pacsynth` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Optional dependency is heavy. |
 | `dpctgan`, `patectgan`, `pategan`, `dpgan` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Experimental GAN-family adapters. |
-| `smartnoise-aim`, `smartnoise-mst` | SmartNoise Synthesizers | `smartnoise` | adapter contract | SmartNoise-specific AIM/MST aliases. |
+| `smartnoise-aim`, `smartnoise-mst` | SmartNoise Synthesizers | `smartnoise` | live smoke | SmartNoise-specific AIM/MST aliases. |
 | `synthcity-privbayes`, `synthcity-pategan`, `synthcity-dpgan` | SynthCity privacy plugins | `synthcity` | adapter contract | Experimental until live CI is added. |
 
 Missing optional backends fail closed with `BackendNotAvailableError` and an
@@ -246,7 +246,7 @@ Near-term:
 
 - publish the first PyPI release
 - add richer benchmark datasets and normalized benchmark history
-- add live CI coverage for SmartNoise AIM/MST or one GAN-family backend
+- add live CI coverage for one GAN-family backend
 
 Later:
 
