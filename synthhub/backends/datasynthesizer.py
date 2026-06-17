@@ -11,6 +11,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from synthhub.backends.base import FitContext
@@ -148,11 +149,14 @@ class FittedDataSynthesizer:
         if n <= 0:
             raise ValueError("n must be positive")
         try:
+            import DataSynthesizer.DataGenerator as generator_module
             from DataSynthesizer.DataGenerator import DataGenerator
         except Exception as exc:
             raise BackendNotAvailableError(
                 "DataSynthesizer generator is unavailable after fitting"
             ) from exc
+        if not hasattr(generator_module, "np"):
+            generator_module.np = np
 
         seed = 0 if self.random_state is None else int(self.random_state)
         try:

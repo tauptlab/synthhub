@@ -49,6 +49,7 @@ def test_default_method_is_aim() -> None:
     synth = Synthesizer(epsilon=1.0)
 
     assert synth.method == "aim"
+    assert synth.delta is None
 
 
 def test_privbayes_missing_dependency_is_explicit(monkeypatch) -> None:

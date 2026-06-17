@@ -13,7 +13,8 @@ through one dataframe-first API.
 | `datasynthesizer-independent` | DataSynthesizer independent mode | DataSynthesizer independent attribute mode | live adapter path | Active-domain categorical DP over SynthHub-encoded columns. |
 | `aim` | Private-PGM AIM | External Private-PGM mechanism | adapter contract; live only when dependency is available | Requires Private-PGM mechanisms on `PYTHONPATH`. |
 | `mst` | Private-PGM MST | External Private-PGM mechanism | adapter contract; live only when dependency is available | Requires Private-PGM mechanisms on `PYTHONPATH`. |
-| SmartNoise aliases | SmartNoise Synthesizers | SmartNoise odometer when exposed | mocked adapter contract | Heavy optional dependency; SynthHub sets preprocessing epsilon to zero by default. |
+| `mwem` | SmartNoise Synthesizers | SmartNoise odometer when exposed | live smoke when dependency is installed | Epsilon-only mechanism; `delta` is not passed when unsupported. |
+| SmartNoise AIM/MST/GAN aliases | SmartNoise Synthesizers | SmartNoise odometer when exposed | mocked adapter contract | Heavy optional dependency; SynthHub sets preprocessing epsilon to zero by default. |
 | SynthCity aliases | SynthCity privacy plugins | Plugin-specific epsilon parameter | mocked adapter contract | Plugin accounting varies; use as experimental until live CI is added. |
 
 ## Public Metadata Requirement
@@ -41,6 +42,7 @@ SynthHub tests and runtime checks verify:
 - sample output returns the original dataframe column order
 - missing optional backends fail closed with `BackendNotAvailableError`
 - DataSynthesizer PrivBayes runs in a live smoke test when installed
+- SmartNoise MWEM runs in a live smoke test when installed
 
 ## What SynthHub Does Not Prove
 
@@ -50,4 +52,3 @@ accounting in a common `PrivacyReport`.
 
 The membership-inference score in `evaluate` is an audit heuristic. It is useful
 for comparing synthetic-data behavior, but it is not a formal DP proof.
-

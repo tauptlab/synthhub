@@ -1,0 +1,21 @@
+# Changelog
+
+All notable changes to SynthHub are documented here.
+
+## Unreleased
+
+- Added PyPI trusted-publishing workflow and release checklist.
+- Added SmartNoise MWEM live smoke coverage.
+- Expanded the public benchmark to breast cancer, iris, and diabetes sklearn datasets.
+- Added a public-schema guide for formal DP usage.
+- Fixed SmartNoise epsilon-only mechanisms that reject `delta`.
+- Added a DataSynthesizer compatibility shim for conditional-probability sampling keys.
+
+## 0.1.0 - Initial alpha
+
+- Added the dataframe-first `Synthesizer.fit/sample/evaluate` API.
+- Added schema inference, preprocessing, and inverse transforms.
+- Added built-in independent marginal baseline.
+- Added DataSynthesizer PrivBayes and independent-mode adapters.
+- Added adapter contracts for Private-PGM, SmartNoise, and SynthCity backends.
+- Added utility and privacy evaluation reports.

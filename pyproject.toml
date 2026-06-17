@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,14 +8,14 @@ version = "0.1.0"
 description = "One unified API for differentially private synthetic data."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "TaupT"}]
 keywords = ["differential-privacy", "synthetic-data", "privacy", "pandas"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -36,6 +36,7 @@ smartnoise = ["smartnoise-synth>=1.0.8"]
 synthcity = ["synthcity>=0.2.12; python_version < '3.13'"]
 test = ["pytest>=7.0"]
 notebook = ["jupyter>=1.0"]
+release = ["build>=1.2", "twine>=5.0"]
 all-backends = [
   "DataSynthesizer>=0.1.13",
   "smartnoise-synth>=1.0.8",
@@ -48,6 +49,7 @@ Homepage = "https://github.com/tauptlab/synthhub"
 Repository = "https://github.com/tauptlab/synthhub"
 Issues = "https://github.com/tauptlab/synthhub/issues"
 Documentation = "https://github.com/tauptlab/synthhub/tree/main/docs"
+Changelog = "https://github.com/tauptlab/synthhub/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["synthhub*"]

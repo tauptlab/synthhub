@@ -63,7 +63,7 @@ def _register_builtins() -> None:
         lambda **kwargs: DataSynthesizerAdapter(mode="independent", **kwargs),
         replace=True,
     )
-    for method in ("mwem", "pacsynth", "dpctgan", "patectgan", "pategan", "dpgan", "quail"):
+    for method in ("mwem", "pacsynth", "dpctgan", "patectgan", "pategan", "dpgan"):
         register_backend(
             method,
             lambda synth=method, **kwargs: SmartNoiseAdapter(synth=synth, **kwargs),

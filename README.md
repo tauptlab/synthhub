@@ -51,6 +51,15 @@ SynthHub focuses on the integration layer:
 - utility and privacy audit metrics for comparing methods under the same
   dataset and epsilon
 
+Where SynthHub fits:
+
+| Project | Best at | SynthHub difference |
+|---|---|---|
+| SDV | Broad synthetic-data product surface | DP-first open adapter layer with explicit accounting reports. |
+| SmartNoise Synth | DP mechanisms and synthesizers | Dataframe-first wrapper, common preprocessing, and shared evaluation. |
+| SynthCity | Large research-oriented synthetic-data suite | Smaller API focused on DP backend switching and comparable reports. |
+| DataSynthesizer | Classic DP PrivBayes implementation | Modern package shell, tests, benchmark, and unified `Synthesizer` API. |
+
 ## Project Status
 
 SynthHub is in alpha. The public API is intentionally small, but backend
@@ -61,13 +70,16 @@ What is solid today:
 - core `Synthesizer.fit/sample/evaluate` flow
 - schema inference and explicit public schema support
 - DataSynthesizer PrivBayes live smoke coverage
+- SmartNoise MWEM live smoke coverage
 - adapter contract tests for optional backends
 - CI across Python 3.10, 3.11, and 3.12 for the core package
+- package build and metadata checks in CI
+- PyPI trusted-publishing workflow prepared
 
 What is still experimental:
 
-- SmartNoise and SynthCity adapters are contract-tested but not yet live-tested
-  in CI
+- SmartNoise AIM/MST/GAN and SynthCity adapters are contract-tested but not yet
+  live-tested in CI
 - Private-PGM AIM/MST require external mechanism modules on `PYTHONPATH`
 - membership-inference scoring is an audit heuristic, not a DP proof
 - PyPI release is pending; install from GitHub for now
@@ -141,8 +153,9 @@ Try the notebook version in
 | `independent` | SynthHub one-way marginals | none | live tests | Built-in smoke-test baseline; not a production synthesizer. |
 | `aim` | Private-PGM AIM | `private-pgm` plus mechanisms path | adapter contract | Requires Private-PGM mechanism modules. |
 | `mst` | Private-PGM MST | `private-pgm` plus mechanisms path | adapter contract | Requires Private-PGM mechanism modules. |
-| `mwem`, `pacsynth` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Optional dependency is heavy. |
-| `dpctgan`, `patectgan`, `pategan`, `dpgan`, `quail` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Experimental GAN-family adapters. |
+| `mwem` | SmartNoise Synthesizers | `smartnoise` | live smoke | Epsilon-only mechanism; unsupported `delta` is handled explicitly. |
+| `pacsynth` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Optional dependency is heavy. |
+| `dpctgan`, `patectgan`, `pategan`, `dpgan` | SmartNoise Synthesizers | `smartnoise` | adapter contract | Experimental GAN-family adapters. |
 | `smartnoise-aim`, `smartnoise-mst` | SmartNoise Synthesizers | `smartnoise` | adapter contract | SmartNoise-specific AIM/MST aliases. |
 | `synthcity-privbayes`, `synthcity-pategan`, `synthcity-dpgan` | SynthCity privacy plugins | `synthcity` | adapter contract | Experimental until live CI is added. |
 
@@ -157,18 +170,24 @@ The benchmark is reproducible and network-free:
 python benchmarks/run_benchmark.py
 ```
 
-It runs the same sklearn tabular dataset at `epsilon=1.0` across installed
-backends. Full outputs are committed in
+It runs sklearn classification and regression datasets at `epsilon=1.0` across
+installed backends. Full outputs are committed in
 [`benchmarks/results/latest.md`](benchmarks/results/latest.md) and
 [`benchmarks/results/latest.csv`](benchmarks/results/latest.csv).
 
 ![Utility vs risk benchmark](benchmarks/results/utility_vs_risk.svg)
 
-| Method | Backend | Status | Epsilon spent | Utility similarity | TSTR score | Re-ID risk |
+| Dataset | Method | Backend | Epsilon spent | Utility similarity | TSTR score | Re-ID risk |
 |---|---|---|---:|---:|---:|---:|
-| `independent` | SynthHub baseline | ok | 1.000 | 0.795 | 0.619 | 0.000 |
-| `privbayes` | DataSynthesizer correlated | ok | 1.000 | 0.576 | 0.432 | 0.000 |
-| `datasynthesizer-independent` | DataSynthesizer independent | ok | 1.000 | 0.869 | 0.513 | 0.005 |
+| `breast_cancer` | `independent` | SynthHub baseline | 1.000 | 0.788 | 0.636 | 0.086 |
+| `breast_cancer` | `privbayes` | DataSynthesizer correlated | 1.000 | 0.598 | 0.715 | 0.036 |
+| `breast_cancer` | `datasynthesizer-independent` | DataSynthesizer independent | 1.000 | 0.831 | 0.378 | 0.030 |
+| `iris` | `independent` | SynthHub baseline | 1.000 | 0.784 | 0.307 | 0.000 |
+| `iris` | `privbayes` | DataSynthesizer correlated | 1.000 | 0.739 | 0.480 | 0.000 |
+| `iris` | `datasynthesizer-independent` | DataSynthesizer independent | 1.000 | 0.762 | 0.167 | 0.000 |
+| `diabetes` | `independent` | SynthHub baseline | 1.000 | 0.776 | -0.418 | 0.000 |
+| `diabetes` | `privbayes` | DataSynthesizer correlated | 1.000 | 0.654 | 0.081 | 0.000 |
+| `diabetes` | `datasynthesizer-independent` | DataSynthesizer independent | 1.000 | 0.772 | -0.055 | 0.000 |
 
 `Utility similarity` is a per-column distribution-similarity score. `TSTR score`
 is train-on-synthetic, test-on-real accuracy. `Re-ID risk` is a
@@ -180,6 +199,10 @@ Formal DP guarantees are conditional on public preprocessing metadata. This
 includes column names, column types, categorical domains, numeric bounds, and
 binning choices. If SynthHub infers these from private data, the
 `PrivacyReport` includes a warning.
+
+For formal usage, start with
+[`docs/public-schema.md`](docs/public-schema.md) and pass an explicit public
+`Schema` to `Synthesizer`.
 
 SynthHub verifies adapter-level contracts:
 
@@ -206,6 +229,8 @@ Repository files:
 
 - [`docs/design.md`](docs/design.md): architecture and adapter boundaries
 - [`docs/dp-guarantees.md`](docs/dp-guarantees.md): privacy contract details
+- [`docs/public-schema.md`](docs/public-schema.md): formal public-schema usage
+- [`docs/release.md`](docs/release.md): PyPI release process
 - [`benchmarks/run_benchmark.py`](benchmarks/run_benchmark.py): public benchmark
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): development and PR expectations
 - [`SECURITY.md`](SECURITY.md): privacy/security reporting policy
@@ -215,10 +240,9 @@ Repository files:
 Near-term:
 
 - add live CI coverage for at least one Private-PGM AIM/MST path
-- add live CI coverage for one SmartNoise backend
 - publish the first PyPI release
 - add richer benchmark datasets and normalized benchmark history
-- document explicit public-schema recipes for formal releases
+- add live CI coverage for SmartNoise AIM/MST or one GAN-family backend
 
 Later:
 

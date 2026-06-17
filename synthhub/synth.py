@@ -21,7 +21,7 @@ class Synthesizer:
         *,
         method: str = "aim",
         epsilon: float = 1.0,
-        delta: float | None = 1e-9,
+        delta: float | None = None,
         schema: Schema | None = None,
         continuous_bins: int = 20,
         random_state=None,

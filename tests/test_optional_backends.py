@@ -120,6 +120,7 @@ def test_new_backend_names_are_registered() -> None:
         "datasynthesizer-privbayes",
         "datasynthesizer-independent",
     }.issubset(methods)
+    assert "quail" not in methods
 
 
 def test_datasynthesizer_privbayes_adapter_uses_correlated_mode(monkeypatch) -> None:
@@ -221,3 +222,24 @@ def test_datasynthesizer_live_smoke_if_installed() -> None:
     assert list(sample.columns) == list(df.columns)
     assert synth.privacy_report_.backend == "datasynthesizer:correlated"
     assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+
+
+def test_smartnoise_mwem_live_smoke_if_installed() -> None:
+    pytest.importorskip("snsynth")
+    df = pd.DataFrame(
+        {
+            "age": [21, 34, 37, 45, 52, 23, 41, 29, 62, 31],
+            "city": ["A", "B", "A", "C", "B", "A", "C", "C", "B", "A"],
+            "churn": [0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+        }
+    )
+
+    synth = Synthesizer(method="mwem", epsilon=1.0, delta=1e-9, random_state=0).fit(df)
+    sample = synth.sample(8)
+
+    assert sample.shape == (8, 3)
+    assert list(sample.columns) == list(df.columns)
+    assert synth.privacy_report_.backend == "smartnoise:mwem"
+    assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
+    assert synth.privacy_report_.delta is None
+    assert any("does not accept delta" in warning for warning in synth.privacy_report_.warnings)

@@ -58,14 +58,14 @@ class SmartNoiseAdapter:
             np.random.seed(int(self.random_state))
 
         create_kwargs = dict(self.options)
-        if self.delta is not None and "delta" not in create_kwargs:
-            create_kwargs["delta"] = self.delta
 
         try:
-            model = SmartNoiseSynthesizer.create(
+            model, spent_delta_fallback, delta_warning = _create_smartnoise_model(
+                SmartNoiseSynthesizer,
                 self.synth,
                 epsilon=self.epsilon,
-                **create_kwargs,
+                delta=self.delta,
+                options=create_kwargs,
             )
             model.fit(
                 encoded_df,
@@ -83,9 +83,9 @@ class SmartNoiseAdapter:
         spent_epsilon, spent_delta = _read_smartnoise_spend(
             model,
             fallback_epsilon=self.epsilon,
-            fallback_delta=self.delta,
+            fallback_delta=spent_delta_fallback,
         )
-        warnings = context.warnings
+        warnings = context.warnings + delta_warning
         if self.preprocessor_eps == 0:
             warnings = warnings + (
                 "SmartNoise preprocessing budget set to 0.0; SynthHub encoded the data before fitting",
@@ -117,6 +117,40 @@ class FittedSmartNoise:
         except Exception as exc:
             raise BackendNotAvailableError(f"SmartNoise sample failed: {exc}") from exc
         return _coerce_encoded_frame(sampled, self.domain)
+
+
+def _create_smartnoise_model(
+    smartnoise_synthesizer: Any,
+    synth: str,
+    *,
+    epsilon: float,
+    delta: float | None,
+    options: dict[str, object],
+) -> tuple[Any, float | None, tuple[str, ...]]:
+    create_kwargs = dict(options)
+    injected_delta = delta is not None and "delta" not in create_kwargs
+    if injected_delta:
+        create_kwargs["delta"] = delta
+
+    try:
+        return (
+            smartnoise_synthesizer.create(synth, epsilon=epsilon, **create_kwargs),
+            delta,
+            (),
+        )
+    except TypeError as exc:
+        if not injected_delta or "delta" not in str(exc):
+            raise
+
+    create_kwargs.pop("delta", None)
+    warning = (
+        f"SmartNoise synthesizer {synth!r} does not accept delta; fitted as an epsilon-only mechanism",
+    )
+    return (
+        smartnoise_synthesizer.create(synth, epsilon=epsilon, **create_kwargs),
+        None,
+        warning,
+    )
 
 
 def _read_smartnoise_spend(

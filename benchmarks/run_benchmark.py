@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_breast_cancer, load_diabetes, load_iris
 
 from synthhub import Synthesizer
 from synthhub.errors import SynthHubError
@@ -31,9 +31,12 @@ DEFAULT_METHODS = (
     "synthcity-privbayes",
 )
 
+DEFAULT_DATASETS = ("breast_cancer", "iris", "diabetes")
+
 
 @dataclass(frozen=True)
 class BenchmarkRow:
+    dataset: str
     method: str
     backend: str
     status: str
@@ -45,6 +48,7 @@ class BenchmarkRow:
 
     def as_dict(self) -> dict[str, str]:
         return {
+            "dataset": self.dataset,
             "method": self.method,
             "backend": self.backend,
             "status": self.status,
@@ -61,43 +65,74 @@ def main() -> None:
     parser.add_argument("--epsilon", type=float, default=1.0)
     parser.add_argument("--sample-rows", type=int, default=180)
     parser.add_argument("--methods", nargs="*", default=list(DEFAULT_METHODS))
+    parser.add_argument("--datasets", nargs="*", choices=DEFAULT_DATASETS, default=list(DEFAULT_DATASETS))
     parser.add_argument("--out-dir", type=Path, default=Path("benchmarks/results"))
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    real_df = load_demo_dataframe()
-    rows = run_benchmark(
-        real_df,
-        methods=args.methods,
+    rows = []
+    for dataset_name in args.datasets:
+        real_df, target = load_demo_dataframe(dataset_name)
+        rows.extend(
+            run_benchmark(
+                real_df,
+                dataset_name=dataset_name,
+                target=target,
+                methods=args.methods,
+                epsilon=args.epsilon,
+                sample_rows=args.sample_rows,
+            )
+        )
+    write_csv(rows, args.out_dir / "latest.csv")
+    write_markdown(
+        rows,
+        args.out_dir / "latest.md",
+        datasets=args.datasets,
         epsilon=args.epsilon,
         sample_rows=args.sample_rows,
     )
-    write_csv(rows, args.out_dir / "latest.csv")
-    write_markdown(rows, args.out_dir / "latest.md", epsilon=args.epsilon, sample_rows=args.sample_rows)
     write_svg(rows, args.out_dir / "utility_vs_risk.svg")
 
 
-def load_demo_dataframe() -> pd.DataFrame:
-    data = load_breast_cancer(as_frame=True)
-    df = data.frame.drop(columns=["target"]).copy()
-    df["target"] = data.frame["target"].map({0: "malignant", 1: "benign"}).astype("object")
-    keep = [
-        "mean radius",
-        "mean texture",
-        "mean perimeter",
-        "mean area",
-        "mean smoothness",
-        "worst radius",
-        "worst texture",
-        "worst area",
-        "target",
-    ]
-    return df.loc[:, keep].rename(columns=lambda name: name.replace(" ", "_"))
+def load_demo_dataframe(name: str) -> tuple[pd.DataFrame, str]:
+    if name == "breast_cancer":
+        data = load_breast_cancer(as_frame=True)
+        df = data.frame.drop(columns=["target"]).copy()
+        df["target"] = data.frame["target"].map({0: "malignant", 1: "benign"}).astype("object")
+        keep = [
+            "mean radius",
+            "mean texture",
+            "mean perimeter",
+            "mean area",
+            "mean smoothness",
+            "worst radius",
+            "worst texture",
+            "worst area",
+            "target",
+        ]
+        return df.loc[:, keep].rename(columns=lambda column: column.replace(" ", "_")), "target"
+
+    if name == "iris":
+        data = load_iris(as_frame=True)
+        df = data.frame.copy()
+        target = df["target"].map(dict(enumerate(data.target_names))).astype("object")
+        df = df.drop(columns=["target"]).assign(target=target)
+        return df.rename(columns=lambda column: column.replace(" ", "_").replace("_(cm)", "")), "target"
+
+    if name == "diabetes":
+        data = load_diabetes(as_frame=True)
+        df = data.frame.copy()
+        df["target"] = data.target.astype(float)
+        return df, "target"
+
+    raise ValueError(f"unknown benchmark dataset: {name}")
 
 
 def run_benchmark(
     real_df: pd.DataFrame,
     *,
+    dataset_name: str,
+    target: str,
     methods: list[str],
     epsilon: float,
     sample_rows: int,
@@ -108,13 +143,14 @@ def run_benchmark(
             synth = Synthesizer(method=method, epsilon=epsilon, random_state=100 + index)
             synth.fit(real_df)
             synth_df = synth.sample(sample_rows)
-            report = synth.evaluate(real_df, synth_df, target="target").to_dict()
+            report = synth.evaluate(real_df, synth_df, target=target).to_dict()
             tos = report["utility"]["train_on_synthetic"]
             tos_score = tos.get("accuracy", tos.get("r2"))
             risk = report["privacy"]["membership_inference"]
             accounting = report["privacy"]["accounting"] or {}
             rows.append(
                 BenchmarkRow(
+                    dataset=dataset_name,
                     method=method,
                     backend=str(accounting.get("backend") or "unknown"),
                     status="ok",
@@ -129,6 +165,7 @@ def run_benchmark(
             status = "skipped" if isinstance(exc, SynthHubError) else "failed"
             rows.append(
                 BenchmarkRow(
+                    dataset=dataset_name,
                     method=method,
                     backend="",
                     status=status,
@@ -149,18 +186,25 @@ def write_csv(rows: list[BenchmarkRow], path: Path) -> None:
         writer.writerows(row.as_dict() for row in rows)
 
 
-def write_markdown(rows: list[BenchmarkRow], path: Path, *, epsilon: float, sample_rows: int) -> None:
+def write_markdown(
+    rows: list[BenchmarkRow],
+    path: Path,
+    *,
+    datasets: list[str],
+    epsilon: float,
+    sample_rows: int,
+) -> None:
     lines = [
         "# SynthHub Benchmark Results",
         "",
-        f"Dataset: `sklearn.datasets.load_breast_cancer` subset. Epsilon: `{epsilon}`. Synthetic rows: `{sample_rows}`.",
+        f"Datasets: `{', '.join(datasets)}`. Epsilon: `{epsilon}`. Synthetic rows per run: `{sample_rows}`.",
         "",
-        "| Method | Backend | Status | Epsilon spent | Utility similarity | TSTR score | Re-ID risk | Detail |",
-        "|---|---|---|---:|---:|---:|---:|---|",
+        "| Dataset | Method | Backend | Status | Epsilon spent | Utility similarity | TSTR score | Re-ID risk | Detail |",
+        "|---|---|---|---|---:|---:|---:|---:|---|",
     ]
     for row in rows:
         lines.append(
-            "| {method} | {backend} | {status} | {epsilon_spent} | {utility_similarity} | "
+            "| {dataset} | {method} | {backend} | {status} | {epsilon_spent} | {utility_similarity} | "
             "{train_on_synthetic_score} | {reid_risk} | {detail} |".format(**_escaped(row.as_dict()))
         )
     lines.extend(
@@ -181,7 +225,7 @@ def write_svg(rows: list[BenchmarkRow], path: Path) -> None:
         if row.status == "ok" and row.utility_similarity and row.reid_risk
     ]
     width = 760
-    height = 320
+    height = max(320, 120 + len(ok_rows) * 52)
     margin_left = 150
     chart_width = 520
     bar_height = 22
@@ -200,7 +244,7 @@ def write_svg(rows: list[BenchmarkRow], path: Path) -> None:
         risk_width = int(chart_width * risk)
         lines.extend(
             [
-                f'<text x="24" y="{y + 15}" font-family="Arial, sans-serif" font-size="13">{_xml(row.method)}</text>',
+                f'<text x="24" y="{y + 15}" font-family="Arial, sans-serif" font-size="13">{_xml(row.dataset + "/" + row.method)}</text>',
                 f'<rect x="{margin_left}" y="{y}" width="{utility_width}" height="{bar_height}" rx="3" fill="#2563eb"/>',
                 f'<rect x="{margin_left}" y="{y + bar_height + 3}" width="{risk_width}" height="8" rx="2" fill="#dc2626"/>',
                 f'<text x="{margin_left + chart_width + 10}" y="{y + 15}" font-family="Arial, sans-serif" font-size="12" fill="#333">U {_fmt(utility)} / R {_fmt(risk)}</text>',
