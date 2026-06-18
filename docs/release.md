@@ -5,8 +5,9 @@ API token should be stored in the repository.
 
 ## Prerequisites
 
-- PyPI project `synthhub` exists.
-- PyPI trusted publisher is configured for:
+- PyPI project `synthhub` exists, or a PyPI pending publisher is configured for
+  the first upload.
+- PyPI trusted publisher or pending publisher is configured for:
   - owner: `tauptlab`
   - repository: `synthhub`
   - workflow: `publish.yml`
@@ -29,18 +30,36 @@ Optional backend smoke checks:
 
 ```bash
 python -m pip install -e ".[test,smartnoise]"
-python -m pytest tests/test_optional_backends.py::test_smartnoise_mwem_live_smoke_if_installed -q
+python -m pytest \
+  tests/test_optional_backends.py::test_smartnoise_mwem_live_smoke_if_installed \
+  tests/test_optional_backends.py::test_smartnoise_aim_live_smoke_if_installed \
+  tests/test_optional_backends.py::test_smartnoise_mst_live_smoke_if_installed \
+  -q
+```
+
+Private-PGM smoke checks require upstream mechanisms:
+
+```bash
+python -m pip install -e ".[test,private-pgm]"
+git clone --depth 1 https://github.com/ryan112358/private-pgm.git .tmp-private-pgm-src
+export PYTHONPATH="$PWD/.tmp-private-pgm-src:$PWD/.tmp-private-pgm-src/mechanisms:$PYTHONPATH"
+python -m pytest \
+  tests/test_optional_backends.py::test_private_pgm_mst_live_smoke_if_mechanisms_available \
+  tests/test_optional_backends.py::test_private_pgm_aim_live_smoke_if_mechanisms_available \
+  -q
 ```
 
 ## Publish
 
-1. Update `version` in `pyproject.toml`.
-2. Move the relevant `CHANGELOG.md` entries from `Unreleased` to the release
-   version.
-3. Commit the release preparation.
-4. Create a GitHub Release for the tag, for example `v0.1.0`.
-5. Confirm that the `Publish` workflow builds, checks, and uploads the package.
-6. Verify installation from PyPI:
+1. Confirm `version` in `pyproject.toml`.
+2. Confirm `CHANGELOG.md` has the release date and no pending entries.
+3. Confirm `docs/releases/v0.1.0.md` is up to date.
+4. Commit the release preparation.
+5. In PyPI, create a pending trusted publisher for project `synthhub` if the
+   project does not yet exist.
+6. Create and publish a GitHub Release for the tag, for example `v0.1.0`.
+7. Confirm that the `Publish` workflow builds, checks, and uploads the package.
+8. Verify installation from PyPI:
 
 ```bash
 python -m pip install "synthhub[datasynthesizer]"

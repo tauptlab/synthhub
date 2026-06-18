@@ -4,6 +4,10 @@ All notable changes to SynthHub are documented here.
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.1.0 - 2026-06-18
+
 - Added PyPI trusted-publishing workflow and release checklist.
 - Added SmartNoise MWEM/AIM/MST live smoke coverage.
 - Added Private-PGM AIM/MST live smoke coverage using upstream mechanisms.
@@ -11,9 +15,6 @@ All notable changes to SynthHub are documented here.
 - Added a public-schema guide for formal DP usage.
 - Fixed SmartNoise epsilon-only mechanisms that reject `delta`.
 - Added a DataSynthesizer compatibility shim for conditional-probability sampling keys.
-
-## 0.1.0 - Initial alpha
-
 - Added the dataframe-first `Synthesizer.fit/sample/evaluate` API.
 - Added schema inference, preprocessing, and inverse transforms.
 - Added built-in independent marginal baseline.

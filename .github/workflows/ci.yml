@@ -107,3 +107,18 @@ jobs:
         run: python -m build
       - name: Check package metadata
         run: python -m twine check dist/*
+      - name: Install built wheel smoke
+        run: |
+          python -m pip install dist/*.whl
+          cd /tmp
+          python - <<'PY'
+          import pandas as pd
+          from synthhub import Synthesizer
+
+          df = pd.DataFrame({"x": [0, 1, 2, 3], "label": [0, 1, 0, 1]})
+          synth = Synthesizer(method="independent", epsilon=1.0, random_state=0).fit(df)
+          sample = synth.sample(4)
+
+          assert sample.shape == (4, 2)
+          assert synth.privacy_report_.epsilon_spent == 1.0
+          PY
