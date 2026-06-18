@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Integral
 from typing import Any, Iterable
 
 import numpy as np
@@ -25,10 +26,14 @@ class TabularPreprocessor:
     """Map pandas dataframes to integer-coded discrete domains."""
 
     def __init__(self, schema: Schema, *, continuous_bins: int = 20):
-        if continuous_bins < 1:
-            raise SchemaError("continuous_bins must be >= 1")
+        if (
+            not isinstance(continuous_bins, Integral)
+            or isinstance(continuous_bins, bool)
+            or int(continuous_bins) < 1
+        ):
+            raise SchemaError("continuous_bins must be a positive integer")
         self.schema = schema
-        self.continuous_bins = continuous_bins
+        self.continuous_bins = int(continuous_bins)
         self.columns_: tuple[EncodedColumn, ...] | None = None
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:

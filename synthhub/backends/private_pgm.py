@@ -12,8 +12,9 @@ import numpy as np
 import pandas as pd
 
 from synthhub.backends.base import FitContext
-from synthhub.errors import BackendNotAvailableError, PrivacyBudgetError
+from synthhub.errors import BackendNotAvailableError
 from synthhub.reports import PrivacyReport
+from synthhub.validation import validate_delta, validate_epsilon
 
 
 class PrivatePGMAdapter:
@@ -36,11 +37,9 @@ class PrivatePGMAdapter:
         verbose: bool = False,
         **_: object,
     ):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
         self.mechanism = mechanism.lower()
-        self.epsilon = float(epsilon)
-        self.delta = 1e-9 if delta is None else float(delta)
+        self.epsilon = validate_epsilon(epsilon)
+        self.delta = validate_delta(1e-9 if delta is None else delta)
         self.random_state = random_state
         self.degree = degree
         self.rounds = rounds

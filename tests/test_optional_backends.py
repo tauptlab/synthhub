@@ -53,6 +53,15 @@ def test_smartnoise_adapter_rejects_preprocessor_overspend() -> None:
             pd.DataFrame({"x": [0, 1, 2], "y": ["a", "b", "a"]})
         )
 
+    with pytest.raises(PrivacyBudgetError, match="preprocessor_eps"):
+        Synthesizer(method="mwem", epsilon=0.5, preprocessor_eps=float("nan")).fit(
+            pd.DataFrame({"x": [0, 1, 2], "y": ["a", "b", "a"]})
+        )
+    with pytest.raises(PrivacyBudgetError, match="preprocessor_eps"):
+        Synthesizer(method="mwem", epsilon=0.5, preprocessor_eps="bad").fit(
+            pd.DataFrame({"x": [0, 1, 2], "y": ["a", "b", "a"]})
+        )
+
 
 def test_smartnoise_adapter_rejects_disabled_dp_mode() -> None:
     with pytest.raises(PrivacyBudgetError, match="disabled_dp"):
@@ -140,7 +149,9 @@ def test_datasynthesizer_privbayes_adapter_uses_correlated_mode(monkeypatch) -> 
 
     class FakeDataGenerator:
         def generate_dataset_in_correlated_attribute_mode(self, n, description_file, seed=0):
-            calls["generate"] = {"n": n, "description_file": description_file, "seed": seed}
+            calls.setdefault("generate", []).append(
+                {"n": n, "description_file": description_file, "seed": seed}
+            )
             self.synthetic_dataset = pd.DataFrame({"age": [0, 1, 0], "city": [0, 0, 0]})
 
     describer_mod = types.ModuleType("DataSynthesizer.DataDescriber")
@@ -156,14 +167,67 @@ def test_datasynthesizer_privbayes_adapter_uses_correlated_mode(monkeypatch) -> 
     df = pd.DataFrame({"age": [20, 30, 40, 50, 60], "city": ["a", "b", "a", "c", "b"]})
     synth = Synthesizer(method="privbayes", epsilon=1.5, random_state=123).fit(df)
     sample = synth.sample(3)
+    synth.sample(3)
 
     assert calls["correlated"]["kwargs"]["epsilon"] == pytest.approx(1.5)
     assert calls["correlated"]["kwargs"]["k"] == 2
+    assert calls["correlated"]["kwargs"]["seed"] == 123
     assert calls["correlated"]["kwargs"]["attribute_to_is_categorical"] == {"age": True, "city": True}
-    assert calls["generate"]["n"] == 3
-    assert calls["generate"]["seed"] == 123
+    assert calls["generate"][0]["n"] == 3
+    assert isinstance(calls["generate"][0]["seed"], int)
+    assert calls["generate"][0]["seed"] != calls["generate"][1]["seed"]
     assert sample.shape == (3, 2)
     assert synth.privacy_report_.backend == "datasynthesizer:correlated"
+
+
+def test_datasynthesizer_reuses_random_state_reproducibly_without_repeating_samples(
+    monkeypatch,
+) -> None:
+    seeds: list[int] = []
+
+    class FakeDataDescriber:
+        def __init__(self, histogram_bins=20):
+            pass
+
+        def describe_dataset_in_independent_attribute_mode(self, dataset_file, **kwargs):
+            pass
+
+        def save_dataset_description_to_file(self, description_file):
+            with open(description_file, "w", encoding="utf-8") as output:
+                output.write("{}")
+
+    class FakeDataGenerator:
+        def generate_dataset_in_independent_mode(self, n, description_file, seed=0):
+            seeds.append(seed)
+            self.synthetic_dataset = pd.DataFrame({"flag": [seed % 2] * n})
+
+    describer_mod = types.ModuleType("DataSynthesizer.DataDescriber")
+    describer_mod.DataDescriber = FakeDataDescriber
+    generator_mod = types.ModuleType("DataSynthesizer.DataGenerator")
+    generator_mod.DataGenerator = FakeDataGenerator
+    package_mod = types.ModuleType("DataSynthesizer")
+
+    monkeypatch.setitem(sys.modules, "DataSynthesizer", package_mod)
+    monkeypatch.setitem(sys.modules, "DataSynthesizer.DataDescriber", describer_mod)
+    monkeypatch.setitem(sys.modules, "DataSynthesizer.DataGenerator", generator_mod)
+
+    df = pd.DataFrame({"flag": [0, 1, 0, 1]})
+    first = Synthesizer(
+        method="datasynthesizer-independent", epsilon=1.0, random_state=42
+    ).fit(df)
+    first.sample(2)
+    first.sample(2)
+    first_seeds = tuple(seeds)
+
+    seeds.clear()
+    second = Synthesizer(
+        method="datasynthesizer-independent", epsilon=1.0, random_state=42
+    ).fit(df)
+    second.sample(2)
+    second.sample(2)
+
+    assert first_seeds == tuple(seeds)
+    assert len(set(seeds)) == 2
 
 
 def test_datasynthesizer_single_column_falls_back_to_independent_mode(monkeypatch) -> None:

@@ -16,8 +16,11 @@ import pandas as pd
 
 from synthhub.backends.base import FitContext
 from synthhub.backends.smartnoise import _coerce_encoded_frame
-from synthhub.errors import BackendNotAvailableError, PrivacyBudgetError
+from synthhub.errors import BackendNotAvailableError
 from synthhub.reports import PrivacyReport
+from synthhub.validation import validate_delta, validate_epsilon
+
+_MAX_DATASYNTHESIZER_SEED = 2**32 - 1
 
 
 class DataSynthesizerAdapter:
@@ -37,14 +40,12 @@ class DataSynthesizerAdapter:
         verbose: bool = False,
         **_: object,
     ):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
         if max_parents < 0:
             raise ValueError("max_parents must be non-negative")
         if mode not in {"correlated", "independent"}:
             raise ValueError("mode must be 'correlated' or 'independent'")
-        self.epsilon = float(epsilon)
-        self.delta = delta
+        self.epsilon = validate_epsilon(epsilon)
+        self.delta = validate_delta(delta)
         self.random_state = random_state
         self.mode = mode
         self.max_parents = max_parents
@@ -75,7 +76,7 @@ class DataSynthesizerAdapter:
         attr_to_datatype = {column: "Integer" for column in context.domain}
         attr_to_is_categorical = {column: True for column in context.domain}
         attr_to_is_candidate_key = {column: False for column in context.domain}
-        seed = 0 if self.random_state is None else int(self.random_state)
+        seed = _fit_seed(self.random_state)
         mode_used = self.mode
         if mode_used == "correlated" and len(context.domain) < 2:
             mode_used = "independent"
@@ -145,6 +146,9 @@ class FittedDataSynthesizer:
     verbose: bool
     privacy_report: PrivacyReport
 
+    def __post_init__(self) -> None:
+        self._rng = np.random.default_rng(self.random_state)
+
     def sample(self, n: int) -> pd.DataFrame:
         if n <= 0:
             raise ValueError("n must be positive")
@@ -158,7 +162,7 @@ class FittedDataSynthesizer:
         if not hasattr(generator_module, "np"):
             generator_module.np = np
 
-        seed = 0 if self.random_state is None else int(self.random_state)
+        seed = _next_seed(self._rng)
         try:
             generator = DataGenerator()
             with _output_context(self.verbose):
@@ -183,6 +187,16 @@ class FittedDataSynthesizer:
             self.tmpdir.cleanup()
         except Exception:
             pass
+
+
+def _fit_seed(random_state: object) -> int:
+    if random_state is None:
+        return _next_seed(np.random.default_rng())
+    return int(random_state)
+
+
+def _next_seed(rng: np.random.Generator) -> int:
+    return int(rng.integers(0, _MAX_DATASYNTHESIZER_SEED))
 
 
 @contextmanager

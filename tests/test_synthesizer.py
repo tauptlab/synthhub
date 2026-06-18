@@ -57,8 +57,15 @@ def test_sample_size_must_be_positive_integer() -> None:
 
 
 def test_epsilon_must_be_positive() -> None:
-    with pytest.raises(PrivacyBudgetError):
-        Synthesizer(method="independent", epsilon=0)
+    for bad_epsilon in (0, -1, float("nan"), float("inf"), True, "not-a-number", object()):
+        with pytest.raises(PrivacyBudgetError, match="finite positive"):
+            Synthesizer(method="independent", epsilon=bad_epsilon)
+
+
+def test_delta_must_be_valid_probability() -> None:
+    for bad_delta in (-1e-9, 1.0, float("nan"), float("inf"), False, "not-a-number", object()):
+        with pytest.raises(PrivacyBudgetError, match="delta"):
+            Synthesizer(method="independent", epsilon=1.0, delta=bad_delta)
 
 
 def test_default_method_is_aim() -> None:

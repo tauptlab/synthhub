@@ -56,8 +56,8 @@ def _column_similarity(real: pd.Series, synth: pd.Series) -> float:
 
 
 def _categorical_similarity(real: pd.Series, synth: pd.Series) -> float:
-    real_counts = real.astype("object").fillna("__missing__").value_counts(normalize=True)
-    synth_counts = synth.astype("object").fillna("__missing__").value_counts(normalize=True)
+    real_counts = _categorical_values(real).value_counts(normalize=True)
+    synth_counts = _categorical_values(synth).value_counts(normalize=True)
     labels = sorted(set(real_counts.index) | set(synth_counts.index), key=str)
     real_p = np.asarray([real_counts.get(label, 0.0) for label in labels])
     synth_p = np.asarray([synth_counts.get(label, 0.0) for label in labels])
@@ -138,9 +138,25 @@ def _is_classification(series: pd.Series) -> bool:
 
 
 def _normalize_categorical_missing(frame: pd.DataFrame) -> pd.DataFrame:
-    normalized = frame.copy()
-    for column in normalized.columns:
-        if not is_numeric_dtype(normalized[column]):
-            series = normalized[column].astype("object")
-            normalized.loc[:, column] = series.where(series.notna(), "__missing__")
-    return normalized
+    normalized: dict[str, pd.Series] = {}
+    for column in frame.columns:
+        series = frame[column]
+        if is_numeric_dtype(series):
+            normalized[column] = series
+            continue
+        normalized[column] = _categorical_values(series)
+    return pd.DataFrame(normalized, index=frame.index)
+
+
+def _categorical_values(series: pd.Series) -> pd.Series:
+    values = series.astype("object")
+    values = values.where(values.notna(), "__missing__")
+    return values.map(_feature_key)
+
+
+def _feature_key(value: Any) -> str:
+    if value == "__missing__":
+        return value
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    return str(value)

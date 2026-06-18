@@ -10,8 +10,9 @@ import pandas as pd
 
 from synthhub.backends.base import FitContext
 from synthhub.backends.smartnoise import _coerce_encoded_frame
-from synthhub.errors import BackendNotAvailableError, PrivacyBudgetError
+from synthhub.errors import BackendNotAvailableError
 from synthhub.reports import PrivacyReport
+from synthhub.validation import validate_delta, validate_epsilon
 
 
 class SynthCityAdapter:
@@ -28,11 +29,9 @@ class SynthCityAdapter:
         random_state=None,
         **options: object,
     ):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
         self.plugin = plugin
-        self.epsilon = float(epsilon)
-        self.delta = delta
+        self.epsilon = validate_epsilon(epsilon)
+        self.delta = validate_delta(delta)
         self.random_state = random_state
         self.options = options
 
@@ -91,4 +90,3 @@ class FittedSynthCity:
         except Exception as exc:
             raise BackendNotAvailableError(f"SynthCity sample failed: {exc}") from exc
         return _coerce_encoded_frame(generated, self.domain)
-

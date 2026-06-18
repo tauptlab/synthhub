@@ -92,9 +92,21 @@ def _align_numeric(left: pd.DataFrame, right: pd.DataFrame) -> tuple[pd.DataFram
 
 
 def _normalize_categorical_missing(frame: pd.DataFrame) -> pd.DataFrame:
-    normalized = frame.copy()
-    for column in normalized.columns:
-        if not is_numeric_dtype(normalized[column]):
-            series = normalized[column].astype("object")
-            normalized.loc[:, column] = series.where(series.notna(), "__missing__")
-    return normalized
+    normalized: dict[str, pd.Series] = {}
+    for column in frame.columns:
+        series = frame[column]
+        if is_numeric_dtype(series):
+            normalized[column] = series
+            continue
+        values = series.astype("object")
+        values = values.where(values.notna(), "__missing__")
+        normalized[column] = values.map(_feature_key)
+    return pd.DataFrame(normalized, index=frame.index)
+
+
+def _feature_key(value: Any) -> str:
+    if value == "__missing__":
+        return value
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    return str(value)

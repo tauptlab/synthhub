@@ -69,6 +69,91 @@ def test_datetime_boolean_and_categorical_columns_round_trip() -> None:
     assert set(sample["tier"]).issubset({"free", "pro", "team"})
 
 
+def test_event_log_with_datetime_features_evaluates_train_on_synthetic() -> None:
+    df = pd.DataFrame(
+        {
+            "event_time": pd.date_range("2026-01-01", periods=30, freq="h"),
+            "was_active": [True, False, None] * 10,
+            "tier": ["free", "pro", "team"] * 10,
+            "converted": [0, 1, 0] * 10,
+        }
+    )
+
+    synth = Synthesizer(method="independent", epsilon=1.0, random_state=13).fit(df)
+    sample = synth.sample(40)
+    report = synth.evaluate(df, sample, target="converted").to_dict()
+
+    assert report["utility"]["train_on_synthetic"]["task"] == "classification"
+    assert report["privacy"]["membership_inference"]["status"] == "ok"
+
+
+@pytest.mark.parametrize(
+    ("name", "df", "target", "task"),
+    [
+        (
+            "customer-churn",
+            pd.DataFrame(
+                {
+                    "age": [22, 31, 47, 58, 36, 41] * 8,
+                    "income": [42000.0, 58000.0, 76000.0, 91000.0, 63000.0, 70000.0] * 8,
+                    "plan": ["free", "plus", "pro", None, "plus", "pro"] * 8,
+                    "region": ["NA", "EU", "APAC", "LATAM", "NA", "EU"] * 8,
+                    "signup_at": pd.date_range("2025-01-01", periods=48, freq="D"),
+                    "churned": [0, 0, 1, 0, 1, 0] * 8,
+                }
+            ),
+            "churned",
+            "classification",
+        ),
+        (
+            "finance-loss",
+            pd.DataFrame(
+                {
+                    "txn_count": [4, 8, 12, 17, 21, 28] * 8,
+                    "avg_balance": [1200.0, 3400.0, 5100.0, 8700.0, 14300.0, 22000.0] * 8,
+                    "segment": ["retail", "retail", "smb", "smb", "enterprise", "enterprise"] * 8,
+                    "risk_band": ["low", "medium", "medium", "high", "low", "high"] * 8,
+                    "is_new": [True, False, None, False, True, False] * 8,
+                    "loss_amount": [float(idx * 6.5 + (idx % 5)) for idx in range(48)],
+                }
+            ),
+            "loss_amount",
+            "regression",
+        ),
+        (
+            "ops-event-log",
+            pd.DataFrame(
+                {
+                    "event_time": pd.date_range("2026-03-01 09:00", periods=48, freq="h"),
+                    "latency_ms": [120.0, 180.0, 230.0, 155.0, 310.0, 95.0] * 8,
+                    "service": ["api", "worker", "billing", "search", "api", "worker"] * 8,
+                    "status": pd.Series(["ok", "ok", "warn", "fail", None, "ok"] * 8, dtype="category"),
+                    "incident": [0, 0, 0, 1, 1, 0] * 8,
+                }
+            ),
+            "incident",
+            "classification",
+        ),
+    ],
+)
+def test_common_business_scenarios_fit_sample_evaluate(
+    name: str,
+    df: pd.DataFrame,
+    target: str,
+    task: str,
+) -> None:
+    synth = Synthesizer(method="independent", epsilon=1.0, random_state=17).fit(df)
+    sample = synth.sample(len(df))
+    report = synth.evaluate(df, sample, target=target).to_dict()
+
+    assert list(sample.columns) == list(df.columns), name
+    assert sample.shape == df.shape, name
+    assert 0.0 <= report["utility"]["mean_column_similarity"] <= 1.0
+    assert report["utility"]["train_on_synthetic"]["task"] == task
+    assert report["privacy"]["accounting"]["epsilon_spent"] == pytest.approx(1.0)
+    assert report["privacy"]["membership_inference"]["status"] == "ok"
+
+
 def test_numeric_age_like_column_infers_continuous_even_on_small_sample() -> None:
     df = pd.DataFrame(
         {

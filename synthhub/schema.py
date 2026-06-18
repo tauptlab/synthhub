@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from numbers import Integral
 from typing import Any, Iterable
 
 import numpy as np
@@ -80,6 +81,7 @@ def infer_schema(
     """Infer a pragmatic public-facing schema from a pandas dataframe."""
 
     _validate_dataframe(df)
+    _validate_inference_options(categorical_threshold, max_categories)
     warnings = [
         "schema was inferred from input data; formal DP is conditional on treating "
         "column types, categories, and bounds as public metadata"
@@ -151,6 +153,21 @@ def _validate_dataframe(df: pd.DataFrame) -> None:
         raise SchemaError("dataframe column names must be non-empty")
     if len(set(names)) != len(names):
         raise SchemaError("dataframe column names must be unique")
+
+
+def _validate_inference_options(categorical_threshold: int, max_categories: int) -> None:
+    if (
+        not isinstance(categorical_threshold, Integral)
+        or isinstance(categorical_threshold, bool)
+        or int(categorical_threshold) < 0
+    ):
+        raise SchemaError("categorical_threshold must be a non-negative integer")
+    if (
+        not isinstance(max_categories, Integral)
+        or isinstance(max_categories, bool)
+        or int(max_categories) < 1
+    ):
+        raise SchemaError("max_categories must be a positive integer")
 
 
 def _should_be_categorical(series: pd.Series, categorical_threshold: int) -> bool:

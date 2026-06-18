@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 
 from synthhub.backends.base import FitContext
-from synthhub.errors import PrivacyBudgetError
 from synthhub.reports import PrivacyReport
+from synthhub.validation import validate_delta, validate_epsilon
 
 
 class IndependentMarginalAdapter:
@@ -23,10 +23,8 @@ class IndependentMarginalAdapter:
     name = "independent"
 
     def __init__(self, *, epsilon: float, delta: float | None = None, random_state=None, **_: object):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
-        self.epsilon = float(epsilon)
-        self.delta = delta
+        self.epsilon = validate_epsilon(epsilon)
+        self.delta = validate_delta(delta)
         self.random_state = random_state
 
     def fit(self, encoded_df: pd.DataFrame, context: FitContext) -> "FittedIndependentMarginal":
@@ -82,4 +80,3 @@ class FittedIndependentMarginal:
         for column, domain_size in self.domain.items():
             data[column] = self._rng.choice(domain_size, size=n, p=self.probabilities[column])
         return pd.DataFrame(data).astype(int)
-

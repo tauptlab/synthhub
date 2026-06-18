@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import nullcontext, redirect_stdout
 from dataclasses import dataclass
 import io
+import math
 from typing import Any
 
 import numpy as np
@@ -13,6 +14,7 @@ import pandas as pd
 from synthhub.backends.base import FitContext
 from synthhub.errors import BackendNotAvailableError, PrivacyBudgetError
 from synthhub.reports import PrivacyReport
+from synthhub.validation import validate_delta, validate_epsilon
 
 
 class SmartNoiseAdapter:
@@ -31,19 +33,23 @@ class SmartNoiseAdapter:
         nullable: bool = False,
         **options: object,
     ):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
-        if preprocessor_eps < 0:
+        epsilon_value = validate_epsilon(epsilon)
+        delta_value = validate_delta(delta)
+        try:
+            preprocessor_eps_value = float(preprocessor_eps)
+        except (TypeError, ValueError) as exc:
+            raise PrivacyBudgetError("preprocessor_eps must be non-negative") from exc
+        if not math.isfinite(preprocessor_eps_value) or preprocessor_eps_value < 0:
             raise PrivacyBudgetError("preprocessor_eps must be non-negative")
-        if preprocessor_eps > epsilon:
+        if preprocessor_eps_value > epsilon_value:
             raise PrivacyBudgetError("preprocessor_eps cannot exceed epsilon")
         if options.get("disabled_dp") is True:
             raise PrivacyBudgetError("disabled_dp=True is not allowed for DP SynthHub backends")
         self.synth = synth
-        self.epsilon = float(epsilon)
-        self.delta = delta
+        self.epsilon = epsilon_value
+        self.delta = delta_value
         self.random_state = random_state
-        self.preprocessor_eps = float(preprocessor_eps)
+        self.preprocessor_eps = preprocessor_eps_value
         self.nullable = nullable
         self.verbose = bool(options.get("verbose", False))
         self.options = options

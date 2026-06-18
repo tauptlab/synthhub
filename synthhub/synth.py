@@ -13,6 +13,7 @@ from synthhub.evaluation import evaluate as evaluate_frames
 from synthhub.preprocessing import TabularPreprocessor
 from synthhub.reports import EvaluationReport, PrivacyReport
 from synthhub.schema import Schema, infer_schema
+from synthhub.validation import validate_delta, validate_epsilon
 
 
 class Synthesizer:
@@ -29,11 +30,9 @@ class Synthesizer:
         random_state=None,
         **backend_options: object,
     ):
-        if epsilon <= 0:
-            raise PrivacyBudgetError("epsilon must be positive")
         self.method = method.lower()
-        self.epsilon = float(epsilon)
-        self.delta = delta
+        self.epsilon = validate_epsilon(epsilon)
+        self.delta = validate_delta(delta)
         self.schema = schema
         self.continuous_bins = continuous_bins
         self.random_state = random_state
