@@ -3,5 +3,6 @@ include CITATION.cff
 include CONTRIBUTING.md
 include SECURITY.md
 recursive-include docs *.md
+recursive-include docs/launch/assets *.gif
 recursive-include examples *.ipynb *.py
 recursive-include benchmarks *.py *.csv *.md *.svg

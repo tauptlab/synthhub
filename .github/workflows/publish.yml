@@ -29,5 +29,32 @@ jobs:
         run: python -m build
       - name: Check package metadata
         run: python -m twine check dist/*
+      - name: Check existing PyPI release
+        id: pypi
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+          import urllib.error
+          import urllib.request
+
+          with open("pyproject.toml", "rb") as file:
+              version = tomllib.load(file)["project"]["version"]
+
+          url = f"https://pypi.org/pypi/synthhub/{version}/json"
+          try:
+              urllib.request.urlopen(url, timeout=15).close()
+              exists = "true"
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise
+              exists = "false"
+
+          print(f"version={version}")
+          print(f"exists={exists}")
+          PY
+      - name: Skip existing PyPI release
+        if: steps.pypi.outputs.exists == 'true'
+        run: echo "synthhub ${{ steps.pypi.outputs.version }} already exists on PyPI; skipping upload."
       - name: Publish package
+        if: steps.pypi.outputs.exists != 'true'
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -7,8 +7,17 @@
 [![Status](https://img.shields.io/badge/status-alpha-orange)](#project-status)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tauptlab/synthhub/blob/main/examples/quickstart.ipynb)
 
-SynthHub is a dataframe-first Python library for differentially private
-synthetic data. It gives DP synthesizers a small, scikit-learn-like interface:
+**One unified API for differentially private synthetic data.**
+
+SynthHub lets you switch DP synthetic-data engines with one argument, keep the
+same pandas `DataFrame` workflow, and compare utility, privacy-accounting, and
+membership-inference audit metrics under the same epsilon.
+
+![SynthHub method-switching demo](docs/launch/assets/synthhub-demo.gif)
+
+```bash
+python -m pip install "synthhub[datasynthesizer]"
+```
 
 ```python
 from synthhub import Synthesizer
@@ -18,6 +27,10 @@ synth.fit(real_df)
 synth_df = synth.sample(1000)
 report = synth.evaluate(real_df, synth_df, target="label")
 ```
+
+The pitch is simple: DP synthetic-data tooling is fragmented, so SynthHub gives
+PrivBayes, AIM, MST, MWEM, and future DP/GAN backends a small scikit-learn-like
+surface for fitting, sampling, and evaluation.
 
 The goal is not to invent another synthetic-data algorithm. SynthHub wraps
 existing DP engines behind one API, then makes preprocessing, evaluation, and
@@ -32,6 +45,7 @@ privacy accounting visible in a common report.
 - [Backends](#backends)
 - [Benchmark](#benchmark)
 - [Privacy Contract](#privacy-contract)
+- [Launch Resources](#launch-resources)
 - [Development](#development)
 - [Roadmap](#roadmap)
 
@@ -217,6 +231,13 @@ SynthHub verifies adapter-level contracts:
 
 Read [`docs/dp-guarantees.md`](docs/dp-guarantees.md) for backend-specific
 accounting sources, caveats, and CI coverage.
+
+## Launch Resources
+
+- [GitHub Release copy](docs/launch/github-release-v0.1.0.post1.md)
+- [Social launch posts](docs/launch/social-posts.md)
+- [Launch checklist](docs/launch/README.md)
+- [Method-switching demo GIF](docs/launch/assets/synthhub-demo.gif)
 
 ## Development
 
