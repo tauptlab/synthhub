@@ -224,6 +224,7 @@ def test_datasynthesizer_live_smoke_if_installed() -> None:
     assert synth.privacy_report_.epsilon_spent == pytest.approx(1.0)
 
 
+@pytest.mark.filterwarnings("ignore:ChainedAssignmentError:FutureWarning")
 def test_private_pgm_mst_live_smoke_if_mechanisms_available() -> None:
     pytest.importorskip("mbi")
     pytest.importorskip("mechanisms.mst")

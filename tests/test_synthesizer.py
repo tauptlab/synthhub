@@ -40,6 +40,22 @@ def test_sample_before_fit_fails() -> None:
         synth.sample(10)
 
 
+def test_evaluate_before_fit_fails() -> None:
+    df = demo_df()
+    synth = Synthesizer(method="independent", epsilon=1.0)
+
+    with pytest.raises(NotFittedError, match="before evaluate"):
+        synth.evaluate(df, df, target="churn")
+
+
+def test_sample_size_must_be_positive_integer() -> None:
+    synth = Synthesizer(method="independent", epsilon=1.0, random_state=0).fit(demo_df())
+
+    for bad_n in (0, -1, 1.5, True):
+        with pytest.raises(ValueError, match="positive integer"):
+            synth.sample(bad_n)  # type: ignore[arg-type]
+
+
 def test_epsilon_must_be_positive() -> None:
     with pytest.raises(PrivacyBudgetError):
         Synthesizer(method="independent", epsilon=0)

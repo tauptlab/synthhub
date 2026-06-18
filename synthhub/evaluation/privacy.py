@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics.pairwise import pairwise_distances
 
@@ -83,9 +84,17 @@ def _nearest_distances(left: pd.DataFrame, right: pd.DataFrame) -> np.ndarray:
 
 def _align_numeric(left: pd.DataFrame, right: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     combined = pd.concat([left, right], axis=0, ignore_index=True)
-    encoded = pd.get_dummies(combined, dummy_na=True)
+    encoded = pd.get_dummies(_normalize_categorical_missing(combined), dummy_na=False)
     numeric = encoded.apply(pd.to_numeric, errors="coerce").fillna(0.0).astype(float)
     std = numeric.std(axis=0).replace(0.0, 1.0)
     numeric = (numeric - numeric.mean(axis=0)) / std
     return numeric.iloc[: len(left)], numeric.iloc[len(left) :]
 
+
+def _normalize_categorical_missing(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    for column in normalized.columns:
+        if not is_numeric_dtype(normalized[column]):
+            series = normalized[column].astype("object")
+            normalized.loc[:, column] = series.where(series.notna(), "__missing__")
+    return normalized

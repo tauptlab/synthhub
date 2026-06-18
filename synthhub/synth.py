@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from numbers import Integral
+
 import pandas as pd
 
 from synthhub.backends.base import FitContext
@@ -85,7 +87,9 @@ class Synthesizer:
     def sample(self, n: int) -> pd.DataFrame:
         if self.fitted_backend_ is None or self.preprocessor_ is None:
             raise NotFittedError("call fit(df) before sample(n)")
-        encoded = self.fitted_backend_.sample(n)
+        if not isinstance(n, Integral) or isinstance(n, bool) or int(n) <= 0:
+            raise ValueError("n must be a positive integer")
+        encoded = self.fitted_backend_.sample(int(n))
         return self.preprocessor_.inverse_transform(encoded)
 
     def evaluate(
@@ -95,6 +99,8 @@ class Synthesizer:
         *,
         target: str | None = None,
     ) -> EvaluationReport:
+        if self.privacy_report_ is None:
+            raise NotFittedError("call fit(df) before evaluate(real_df, synth_df)")
         return evaluate_frames(
             real_df,
             synth_df,

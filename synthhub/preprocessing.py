@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterable
 
 import numpy as np
 import pandas as pd
@@ -63,9 +63,8 @@ class TabularPreprocessor:
             raise SchemaError("preprocessor is not fitted")
         decoded: dict[str, Any] = {}
         transforms = {column.name: column for column in self.columns_}
+        self._validate_columns(encoded_df, expected_names=transforms.keys(), label="encoded dataframe")
         for spec in self.schema.columns:
-            if spec.name not in encoded_df.columns:
-                raise SchemaError(f"encoded dataframe is missing column {spec.name!r}")
             values = encoded_df[spec.name].to_numpy(dtype=int)
             column = transforms[spec.name]
             if spec.kind == "categorical":
@@ -89,10 +88,28 @@ class TabularPreprocessor:
             raise SchemaError("preprocessor is not fitted")
         return {column.name: column.domain_size for column in self.columns_}
 
-    def _validate_columns(self, df: pd.DataFrame) -> None:
-        missing = [name for name in self.schema.names if name not in df.columns]
+    def _validate_columns(
+        self,
+        df: pd.DataFrame,
+        *,
+        expected_names: Iterable[str] | None = None,
+        label: str = "dataframe",
+    ) -> None:
+        if not isinstance(df, pd.DataFrame):
+            raise SchemaError(f"expected a pandas DataFrame for {label}")
+        names = list(df.columns)
+        if any(not isinstance(name, str) or not name for name in names):
+            raise SchemaError(f"{label} column names must be non-empty strings")
+        if len(set(names)) != len(names):
+            raise SchemaError(f"{label} column names must be unique")
+
+        expected = tuple(expected_names or self.schema.names)
+        missing = [name for name in expected if name not in df.columns]
         if missing:
-            raise SchemaError(f"dataframe is missing schema columns: {missing}")
+            raise SchemaError(f"{label} is missing schema columns: {missing}")
+        extra = [name for name in names if name not in expected]
+        if extra:
+            raise SchemaError(f"{label} has columns not present in schema: {extra}")
 
     def _encode_categorical(
         self, series: pd.Series, spec: ColumnSpec

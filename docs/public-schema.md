@@ -68,6 +68,8 @@ schema warning.
   private dataframe.
 - Include all allowed categorical values, even if some are absent in the current
   private sample.
+- Pass a dataframe whose columns exactly match the schema. If the private source
+  has extra attributes, select the intended columns before calling `fit`.
 - Treat row filtering, joins, and feature engineering before `fit` as part of
   the private data pipeline unless those rules are public.
 - Keep benchmark and production schemas in version control when policy allows.

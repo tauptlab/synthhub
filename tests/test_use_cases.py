@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import pytest
 
@@ -87,3 +89,42 @@ def test_high_cardinality_categorical_requires_explicit_schema() -> None:
     with pytest.raises(SchemaError, match="pass an explicit Schema"):
         infer_schema(df, max_categories=100)
 
+
+def test_public_schema_rejects_unexpected_private_columns() -> None:
+    df = pd.DataFrame(
+        {
+            "age": [21, 34, 45, 52],
+            "city": ["A", "B", "A", "C"],
+            "ssn": ["111", "222", "333", "444"],
+        }
+    )
+    schema = Schema(
+        columns=(
+            ColumnSpec("age", "continuous", "int64", lower=0, upper=100),
+            ColumnSpec("city", "categorical", "object", categories=("A", "B", "C")),
+        ),
+        source="public",
+    )
+
+    with pytest.raises(SchemaError, match="not present in schema"):
+        Synthesizer(method="independent", epsilon=1.0, schema=schema).fit(df)
+
+
+def test_all_missing_and_constant_columns_still_produce_serializable_report() -> None:
+    df = pd.DataFrame(
+        {
+            "constant_score": [5.0] * 12,
+            "empty_note": [None] * 12,
+            "flag": [True] * 12,
+        }
+    )
+
+    synth = Synthesizer(method="independent", epsilon=1.0, random_state=9).fit(df)
+    sample = synth.sample(20)
+    report = synth.evaluate(df, sample).to_dict()
+
+    assert list(sample.columns) == list(df.columns)
+    assert set(sample["constant_score"].dropna()).issubset({5.0})
+    assert sample["empty_note"].isna().all()
+    assert set(sample["flag"].dropna()).issubset({True})
+    json.dumps(report)

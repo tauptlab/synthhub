@@ -4,7 +4,7 @@ import pytest
 from synthhub.backends.registry import register_backend
 from synthhub.reports import PrivacyReport
 from synthhub.synth import Synthesizer
-from synthhub.errors import PrivacyBudgetError
+from synthhub.errors import PrivacyBudgetError, SchemaError
 
 
 class ContractBackend:
@@ -52,3 +52,28 @@ def test_backend_cannot_report_more_epsilon_than_requested() -> None:
     with pytest.raises(PrivacyBudgetError, match="exceeding requested epsilon"):
         Synthesizer(method="contract-overspend", epsilon=0.7).fit(df)
 
+
+def test_backend_cannot_return_unexpected_encoded_columns() -> None:
+    class ExtraColumnBackend(ContractBackend):
+        def fit(self, encoded_df, context):
+            class Fitted:
+                privacy_report = PrivacyReport(
+                    method=context.method,
+                    requested_epsilon=context.epsilon,
+                    epsilon_spent=context.epsilon,
+                    accountant="contract-test",
+                )
+
+                def sample(self, n):
+                    data = {column: [0] * n for column in context.domain}
+                    data["unexpected"] = [0] * n
+                    return pd.DataFrame(data)
+
+            return Fitted()
+
+    register_backend("contract-extra-column", ExtraColumnBackend, replace=True)
+    df = pd.DataFrame({"x": [1, 2, 3, 4], "y": ["a", "b", "a", "b"]})
+
+    synth = Synthesizer(method="contract-extra-column", epsilon=0.7).fit(df)
+    with pytest.raises(SchemaError, match="not present in schema"):
+        synth.sample(5)

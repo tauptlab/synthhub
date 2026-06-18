@@ -125,10 +125,10 @@ def _train_on_synthetic_score(
 
 
 def _align_features(left: pd.DataFrame, right: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    left_encoded = pd.get_dummies(left, dummy_na=True)
-    right_encoded = pd.get_dummies(right, dummy_na=True)
+    left_encoded = pd.get_dummies(_normalize_categorical_missing(left), dummy_na=False)
+    right_encoded = pd.get_dummies(_normalize_categorical_missing(right), dummy_na=False)
     left_aligned, right_aligned = left_encoded.align(right_encoded, join="outer", axis=1, fill_value=0)
-    return left_aligned.astype(float), right_aligned.astype(float)
+    return left_aligned.fillna(0.0).astype(float), right_aligned.fillna(0.0).astype(float)
 
 
 def _is_classification(series: pd.Series) -> bool:
@@ -136,3 +136,11 @@ def _is_classification(series: pd.Series) -> bool:
         return True
     return int(series.nunique(dropna=True)) <= 20
 
+
+def _normalize_categorical_missing(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = frame.copy()
+    for column in normalized.columns:
+        if not is_numeric_dtype(normalized[column]):
+            series = normalized[column].astype("object")
+            normalized.loc[:, column] = series.where(series.notna(), "__missing__")
+    return normalized
