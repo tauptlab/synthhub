@@ -24,7 +24,7 @@ GitHub topics verified on 2026-06-18:
 - [x] Colab quickstart installs from PyPI.
 - [x] Demo GIF shows backend switching.
 - [x] GitHub topics are set for discovery.
-- [ ] GitHub Release is published.
+- [x] GitHub Release is published.
 - [ ] PyPI API token used for the first release is revoked or rotated.
 - [ ] PyPI Trusted Publishing is configured for future tokenless releases.
 - [ ] Launch posts are published.
