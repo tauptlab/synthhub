@@ -61,6 +61,10 @@ def test_smartnoise_adapter_rejects_preprocessor_overspend() -> None:
         Synthesizer(method="mwem", epsilon=0.5, preprocessor_eps="bad").fit(
             pd.DataFrame({"x": [0, 1, 2], "y": ["a", "b", "a"]})
         )
+    with pytest.raises(PrivacyBudgetError, match="preprocessor_eps"):
+        Synthesizer(method="mwem", epsilon=1.0, preprocessor_eps=True).fit(
+            pd.DataFrame({"x": [0, 1, 2], "y": ["a", "b", "a"]})
+        )
 
 
 def test_smartnoise_adapter_rejects_disabled_dp_mode() -> None:

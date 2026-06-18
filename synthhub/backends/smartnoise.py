@@ -35,6 +35,8 @@ class SmartNoiseAdapter:
     ):
         epsilon_value = validate_epsilon(epsilon)
         delta_value = validate_delta(delta)
+        if isinstance(preprocessor_eps, bool):
+            raise PrivacyBudgetError("preprocessor_eps must be non-negative")
         try:
             preprocessor_eps_value = float(preprocessor_eps)
         except (TypeError, ValueError) as exc:
