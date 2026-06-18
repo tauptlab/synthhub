@@ -6,6 +6,11 @@ All notable changes to SynthHub are documented here.
 
 No unreleased changes.
 
+## 0.1.0.post1 - 2026-06-18
+
+- Corrected PyPI-facing README and install metadata after the first PyPI
+  publication.
+
 ## 0.1.0 - 2026-06-18
 
 - Added PyPI trusted-publishing workflow and release checklist.

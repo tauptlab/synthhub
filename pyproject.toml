@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synthhub"
-version = "0.1.0"
+version = "0.1.0.post1"
 description = "One unified API for differentially private synthetic data."
 readme = "README.md"
 requires-python = ">=3.10"

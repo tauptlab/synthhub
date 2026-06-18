@@ -1,13 +1,12 @@
 # Release Process
 
-SynthHub publishes with PyPI trusted publishing from GitHub Releases. No PyPI
-API token should be stored in the repository.
+SynthHub should publish future releases with PyPI trusted publishing from
+GitHub Releases. No PyPI API token should be stored in the repository.
 
 ## Prerequisites
 
-- PyPI project `synthhub` exists, or a PyPI pending publisher is configured for
-  the first upload.
-- PyPI trusted publisher or pending publisher is configured for:
+- PyPI project `synthhub` exists.
+- PyPI trusted publisher is configured for tokenless releases:
   - owner: `tauptlab`
   - repository: `synthhub`
   - workflow: `publish.yml`
@@ -53,13 +52,11 @@ python -m pytest \
 
 1. Confirm `version` in `pyproject.toml`.
 2. Confirm `CHANGELOG.md` has the release date and no pending entries.
-3. Confirm `docs/releases/v0.1.0.md` is up to date.
+3. Confirm `docs/releases/<version>.md` is up to date.
 4. Commit the release preparation.
-5. In PyPI, create a pending trusted publisher for project `synthhub` if the
-   project does not yet exist.
-6. Create and publish a GitHub Release for the tag, for example `v0.1.0`.
-7. Confirm that the `Publish` workflow builds, checks, and uploads the package.
-8. Verify installation from PyPI:
+5. Create and publish a GitHub Release for the tag, for example `v0.1.1`.
+6. Confirm that the `Publish` workflow builds, checks, and uploads the package.
+7. Verify installation from PyPI:
 
 ```bash
 python -m pip install "synthhub[datasynthesizer]"
@@ -68,3 +65,7 @@ import synthhub
 print(synthhub.__version__ if hasattr(synthhub, "__version__") else "installed")
 PY
 ```
+
+Manual token uploads are only a fallback when trusted publishing is not yet
+configured. If used, pass the token through process-local environment variables,
+never commit it to the repository, and rotate the token after use.

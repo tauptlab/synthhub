@@ -1,6 +1,7 @@
 # SynthHub
 
 [![CI](https://github.com/tauptlab/synthhub/actions/workflows/ci.yml/badge.svg)](https://github.com/tauptlab/synthhub/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/synthhub.svg)](https://pypi.org/project/synthhub/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![Status](https://img.shields.io/badge/status-alpha-orange)](#project-status)
@@ -74,8 +75,7 @@ What is solid today:
 - SmartNoise MWEM/AIM/MST live smoke coverage
 - adapter contract tests for optional backends
 - CI across Python 3.10, 3.11, and 3.12 for the core package
-- package build and metadata checks in CI
-- PyPI trusted-publishing workflow prepared
+- PyPI package release, build checks, and wheel install smoke coverage
 
 What is still experimental:
 
@@ -83,20 +83,19 @@ What is still experimental:
   live-tested in CI
 - Private-PGM AIM/MST require external mechanism modules on `PYTHONPATH`
 - membership-inference scoring is an audit heuristic, not a DP proof
-- PyPI release is pending; install from GitHub for now
 
 ## Install
+
+Install from PyPI:
+
+```bash
+python -m pip install "synthhub[datasynthesizer]"
+```
 
 Install the current development version from GitHub:
 
 ```bash
 python -m pip install "synthhub[datasynthesizer] @ git+https://github.com/tauptlab/synthhub.git"
-```
-
-After the first PyPI release:
-
-```bash
-python -m pip install "synthhub[datasynthesizer]"
 ```
 
 Optional backend families:
@@ -244,7 +243,7 @@ Repository files:
 
 Near-term:
 
-- publish the first PyPI release
+- configure tokenless PyPI Trusted Publishing for future releases
 - add richer benchmark datasets and normalized benchmark history
 - add live CI coverage for one GAN-family backend
 
